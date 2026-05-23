@@ -11,7 +11,7 @@ st.write("顧客の成形条件を入力し、TCO削減額の算出と、購買�
 st.sidebar.header("🔑 AI連携設定")
 st.sidebar.write("商談用の『稟議書自動生成』を使用するにはAPIキーが必要です。")
 api_key = st.sidebar.text_input("Gemini API Key を入力してください", type="password")
-model_choice = st.sidebar.selectbox("使用するAIモデル", ["gemini-1.5-pro", "gemini-1.5-flash"])
+model_choice = st.sidebar.selectbox("使用するAIモデル", ("gemini-1.5-pro", "gemini-1.5-flash"))
 
 # 3. 2カラム構成でメイン画面を配置
 col1, col2 = st.columns([1, 1.2])
@@ -19,8 +19,13 @@ col1, col2 = st.columns([1, 1.2])
 with col1:
     st.header("📥 顧客の成形条件・現行コスト入力")
     
-    # 選択肢のリストをあらかじめ定義しておきます（エラー防止）
-    purge_brands =
+    # 【★完全修正】エラーを確実に防ぐため、丸括弧（タプル）で選択肢を記述しました
+    purge_brands = (
+        "アサクリン (旭化成)",
+        "セルパージ (ダイセルミライズ)",
+        "ToYoクリーン (東洋化学)",
+        "その他・石油由来の汎用パージ剤"
+    )
     
     current_purge_brand = st.selectbox(
         "現在使用しているパージ剤",
@@ -91,7 +96,7 @@ with col2:
 
             【稟議書の構成】
             1. 提案の趣旨（背景：サステナビリティ推進とコスト削減の同時達成）
-            2. 現状 of コスト構造の課題（時間ロス、材料ロス、および廃棄物コストの定量分析）
+            2. 現状のコスト構造の課題（時間ロス、材料ロス、および廃棄物コストの定量分析）
             3. LIMEX Purge選定の技術的・経済的根拠（安全性、物理掻き出し力、価格の安定性）
             4. 経済性シミュレーション結果（現行TCO：{int(current_tco):,}円 vs 導入後TCO：{int(limex_tco):,}円、年間削減額：{int(expected_saving):,}円）
             5. 導入プロセス（まずは「5kg無償サンプル」によるテストから開始し、現場負荷ゼロで移行するステップ）
