@@ -1,5 +1,4 @@
 import streamlit as st
-import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
@@ -10,10 +9,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
-# グラフのフォント文字化け対策（日本語対応）
-plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'Arial', 'Heisei Maru Gothic', 'sans-serif']
-plt.rcParams['axes.unicode_minus'] = False
 
 # ==========================================
 # データベース (紹介資料 Slide 16, Slide 36, Slide 38)
@@ -55,7 +50,6 @@ cycles_per_month = st.sidebar.slider("1台あたりの月間色替え回数 (回
 st.sidebar.markdown("---")
 st.sidebar.subheader("💸 コスト・単価設定")
 
-# 中東情勢によるナフサ高騰のアラート
 st.sidebar.warning("⚠️ 原油・ナフサ高騰により、他社製石油系パージ剤は急激な価格高騰リスクに晒されています。")
 
 comp_purge_type = st.sidebar.selectbox(
@@ -75,7 +69,7 @@ current_purge_usage = st.sidebar.number_input("1回あたりの現行パージ�
 current_resin_waste = st.sidebar.number_input("1回あたりの現行ロス樹脂量 (kg)", value=defaults["waste"], step=0.5)
 
 # ==========================================
-# 計算ロジック (紹介資料の実証数値に基づく)
+# 計算ロジック
 # ==========================================
 total_cycles = machines * cycles_per_month * 12
 
@@ -98,7 +92,7 @@ limex_annual_cost = total_cycles * limex_cycle_total
 
 annual_savings = curr_annual_cost - limex_annual_cost
 
-# 環境価値計算 (LCA実績 Slide 36)
+# 環境価値計算
 curr_total_purge_kg = current_purge_usage * total_cycles
 limex_total_purge_kg = limex_purge_usage * total_cycles
 
@@ -156,7 +150,7 @@ with col4:
 
 st.markdown("---")
 
-# タブ機能で詳細を整理
+# タブ機能
 tab1, tab2, tab3 = st.tabs(["📊 コスト・環境分析グラフ", "📋 詳細計算明細", "💡 技術データ＆導入事例"])
 
 with tab1:
@@ -164,34 +158,25 @@ with tab1:
     
     with col_chart1:
         st.subheader("💰 年間トータルコストの比較")
-        fig, ax = plt.subplots(figsize=(6, 4))
-        categories = ['現状 (他社石油系)', 'LIMEX Purge 導入後']
-        costs = [curr_annual_cost, limex_annual_cost]
-        bars = ax.bar(categories, costs, color=['#e11d48', '#10b981'], width=0.5)
-        ax.set_ylabel('年間コスト (円)', fontsize=10)
-        # カンマ区切りのラベルを追加
-        for bar in bars:
-            yval = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width()/2.0, yval + (curr_annual_cost*0.01), f'¥{int(yval):,}', ha='center', va='bottom', fontsize=9, fontweight='bold')
-        st.pyplot(fig)
+        # Streamlit純正のインタラクティブな縦棒グラフ（文字化けが絶対に起きない）
+        cost_df = pd.DataFrame(
+            [curr_annual_cost, limex_annual_cost],
+            index=["現状 (他社石油系)", "LIMEX Purge 導入後"],
+            columns=["年間トータルコスト (円)"]
+        )
+        st.bar_chart(cost_df, height=350, use_container_width=True)
         
     with col_chart2:
-        st.subheader("🌱 GHG排出量＆石油プラ使用量比較")
-        fig, ax = plt.subplots(figsize=(6, 4))
-        
-        labels = ['GHG排出 (kg-CO2e)', '石油プラ使用 (kg)']
-        curr_data = [curr_co2, curr_plat]
-        limex_data = [limex_co2, limex_plat]
-        
-        x = np.arange(len(labels))
-        width = 0.35
-        
-        ax.bar(x - width/2, curr_data, width, label='現状 (他社石油系)', color='#94a3b8')
-        ax.bar(x + width/2, limex_data, width, label='LIMEX Purge G', color='#06b6d4')
-        ax.set_xticks(x)
-        ax.set_xticklabels(labels)
-        ax.legend()
-        st.pyplot(fig)
+        st.subheader("🌱 環境貢献比較 (現状 vs LIMEX)")
+        # 複数カラムの比較グラフ
+        env_df = pd.DataFrame(
+            {
+                "現状 (他社石油系)": [curr_co2, curr_plat],
+                "LIMEX Purge 導入後": [limex_co2, limex_plat]
+            },
+            index=["GHG排出量 (kg-CO2e)", "石油プラ使用量 (kg)"]
+        )
+        st.bar_chart(env_df, height=350, use_container_width=True)
 
 with tab2:
     st.subheader("📋 項目別 年間コストシミュレーション明細")
@@ -221,7 +206,7 @@ with tab2:
     st.table(pd.DataFrame(detail_data))
 
 with tab3:
-    st.subheader("💡 設備保護・作業効率化に関する技術的ファクト (紹介資料より)")
+    st.subheader("💡 設備保護・作業効率化に関する技術的ファクト")
     
     col_tech1, col_env_tbl = st.columns(2)
     
@@ -250,7 +235,7 @@ with tab3:
         with st.expander("🚗 Tier1企業をはじめとする豊富な良好導入事例"):
             st.markdown("""
             *   **自動車部品 (ピラー/700t):** 現行パージ剤（B社製）と比較して洗浄能力が高く、量産開始直後の捨て打ち廃棄数を半減（不良ロス削減＆コストダウン）。
-            *   **自動車部品 (ドアロック/450t):** スクリュー表面の炭化物のこびり付きを低減し、コストダウンを両立。
+            *   **自動車部品 (ドアロック/450t):** スクリュー表面 of 炭化物のこびり付きを低減し、コストダウンを両立。
             *   **家電製品 (空調ファン/350t):** 洗浄力が高く、現行品（A社製）の半分以下の使用量でパージが完了。
             """)
 
@@ -270,11 +255,14 @@ st.markdown("シミュレーターで算出された効果を現場で実際に�
 
 col_form1, col_form2 = st.columns(2)
 with col_form1:
-    st.text_input("会社名")
-    st.text_input("お名前")
+    company_name = st.text_input("会社名")
+    user_name = st.text_input("お名前")
 with col_form2:
-    st.text_input("メールアドレス")
-    st.selectbox("最も試してみたい対応グレード", ["高洗浄：LIMEX Purge G (汎用樹脂向け)", "高洗浄：LIMEX Purge HT (エンプラ樹脂向け)", "低残留：LIMEX Purge S (開発中バランスタイプ)", "フィルム用：LIMEX Purge F (インフレ・Tダイ)"])
+    email = st.text_input("メールアドレス")
+    grade_selection = st.selectbox("最も試してみたい対応グレード", ["高洗浄：LIMEX Purge G (汎用樹脂向け)", "高洗浄：LIMEX Purge HT (エンプラ樹脂向け)", "低残留：LIMEX Purge S (開発中バランスタイプ)", "フィルム用：LIMEX Purge F (インフレ・Tダイ)"])
 
 if st.button("シミュレーション結果を添付して無料サンプルを請求する"):
-    st.success("ありがとうございます！お申込みを受け付けました。1営業日以内に担当者（h-koji@tb-m.com）より折り返しご連絡いたします。")
+    if company_name and user_name and email:
+        st.success("ありがとうございます！お申込みを受け付けました。1営業日以内に担当者（h-koji@tb-m.com）より折り返しご連絡いたします。")
+    else:
+        st.error("お手数ですが、会社名・お名前・メールアドレスをご入力ください。")
